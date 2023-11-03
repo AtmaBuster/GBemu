@@ -3,54 +3,260 @@ import struct, random
 OPCODES = {
 	0x00 : (0, 1, 'nop'),
 	0x01 : (2, 3, 'ld bc, ${val:0>4X}'),
+	0x02 : (0, 2, 'ld [bc], a'),
+	0x03 : (0, 2, 'inc bc'),
 	0x04 : (0, 1, 'inc b'),
 	0x05 : (0, 1, 'dec b'),
 	0x06 : (1, 8, 'ld b, ${val:0>2X}'),
+	0x07 : (1, 1, 'rlca'),
+	0x08 : (2, 5, 'ld [${val:0>4X}], sp'),
+	0x09 : (0, 2, 'add hl, bc'),
+	0x0A : (0, 2, 'ld a, [bc]'),
+	0x0B : (0, 2, 'dec bc'),
 	0x0C : (0, 1, 'inc c'),
 	0x0D : (0, 1, 'dec c'),
 	0x0E : (1, 8, 'ld c, ${val:0>2X}'),
+	0x0F : (0, 1, 'rrca'),
+	0x10 : (1, 1, 'stop'),
 	0x11 : (2, 3, 'ld de, ${val:0>4X}'),
+	0x12 : (0, 2, 'ld [de], a'),
 	0x13 : (0, 2, 'inc de'),
+	0x14 : (0, 1, 'inc d'),
 	0x15 : (0, 1, 'dec d'),
 	0x16 : (1, 2, 'ld d, ${val:0>2X}'),
 	0x17 : (0, 1, 'rla'),
 	0x18 : (1, 2, 'jr ${rel:0>4X}'),
+	0x19 : (0, 2, 'add hl, de'),
 	0x1A : (0, 2, 'ld a, [de]'),
+	0x1B : (0, 2, 'dec de'),
+	0x1C : (0, 1, 'inc e'),
 	0x1D : (0, 1, 'dec e'),
 	0x1E : (1, 2, 'ld e, ${val:0>2X}'),
+	0x1F : (0, 1, 'rra'),
 	0x20 : (1, 2, 'jr nz, ${rel:0>4X}'),
 	0x21 : (2, 3, 'ld hl, ${val:0>4X}'),
 	0x22 : (0, 2, 'ldi [hl], a'),
 	0x23 : (0, 2, 'inc hl'),
 	0x24 : (0, 1, 'inc h'),
+	0x25 : (0, 1, 'dec h'),
+	0x26 : (1, 2, 'ld h, ${val:0>2X}'),
+	0x27 : (0, 1, 'daa'),
 	0x28 : (1, 2, 'jr z, ${rel:0>4X}'),
+	0x29 : (0, 2, 'add hl, hl'),
+	0x2A : (0, 2, 'ldi a, [hl]'),
+	0x2B : (0, 2, 'dec hl'),
+	0x2C : (0, 1, 'inc l'),
+	0x2D : (0, 1, 'dec l'),
 	0x2E : (1, 2, 'ld l, ${val:0>2X}'),
+	0x2F : (0, 1, 'cpl'),
+	0x30 : (1, 2, 'jr nc, ${rel:0>4X}'),
 	0x31 : (2, 3, 'ld sp, ${val:0>4X}'),
 	0x32 : (0, 2, 'ldd [hl], a'),
+	0x33 : (0, 2, 'inc sp'),
+	0x34 : (0, 3, 'inc [hl]'),
+	0x35 : (0, 3, 'dec [hl]'),
+	0x36 : (1, 3, 'ld [hl], ${val:0>2X}'),
+	0x37 : (0, 1, 'scf'),
+	0x38 : (1, 2, 'jr c, ${rel:0>4X}'),
+	0x39 : (0, 2, 'add hl, sp'),
+	0x3A : (0, 2, 'ldd a, [hl]'),
+	0x3B : (0, 2, 'dec sp'),
+	0x3C : (0, 1, 'inc a'),
 	0x3D : (0, 1, 'dec a'),
 	0x3E : (1, 2, 'ld a, ${val:0>2X}'),
+	0x3F : (0, 1, 'ccf'),
+	0x40 : (0, 1, 'ld b, b'),
+	0x41 : (0, 1, 'ld b, c'),
+	0x42 : (0, 1, 'ld b, d'),
+	0x43 : (0, 1, 'ld b, e'),
+	0x44 : (0, 1, 'ld b, h'),
+	0x45 : (0, 1, 'ld b, l'),
+	0x46 : (0, 2, 'ld b, [hl]'),
+	0x47 : (0, 1, 'ld b, a'),
+	0x48 : (0, 1, 'ld c, b'),
+	0x49 : (0, 1, 'ld c, c'),
+	0x4A : (0, 1, 'ld c, d'),
+	0x4B : (0, 1, 'ld c, e'),
+	0x4C : (0, 1, 'ld c, h'),
+	0x4D : (0, 1, 'ld c, l'),
+	0x4E : (0, 2, 'ld c, [hl]'),
 	0x4F : (0, 1, 'ld c, a'),
+	0x50 : (0, 1, 'ld d, b'),
+	0x51 : (0, 1, 'ld d, c'),
+	0x52 : (0, 1, 'ld d, d'),
+	0x53 : (0, 1, 'ld d, e'),
+	0x54 : (0, 1, 'ld d, h'),
+	0x55 : (0, 1, 'ld d, l'),
+	0x56 : (0, 2, 'ld d, [hl]'),
 	0x57 : (0, 1, 'ld d, a'),
+	0x58 : (0, 1, 'ld e, b'),
+	0x59 : (0, 1, 'ld e, c'),
+	0x5A : (0, 1, 'ld e, d'),
+	0x5B : (0, 1, 'ld e, e'),
+	0x5C : (0, 1, 'ld e, h'),
+	0x5D : (0, 1, 'ld e, l'),
+	0x5E : (0, 2, 'ld e, [hl]'),
+	0x5F : (0, 1, 'ld e, a'),
+	0x60 : (0, 1, 'ld h, b'),
+	0x61 : (0, 1, 'ld h, c'),
+	0x62 : (0, 1, 'ld h, d'),
+	0x63 : (0, 1, 'ld h, e'),
+	0x64 : (0, 1, 'ld h, h'),
+	0x65 : (0, 1, 'ld h, l'),
+	0x66 : (0, 2, 'ld h, [hl]'),
 	0x67 : (0, 1, 'ld h, a'),
+	0x68 : (0, 1, 'ld l, b'),
+	0x69 : (0, 1, 'ld l, c'),
+	0x6A : (0, 1, 'ld l, d'),
+	0x6B : (0, 1, 'ld l, e'),
+	0x6C : (0, 1, 'ld l, h'),
+	0x6D : (0, 1, 'ld l, l'),
+	0x6E : (0, 2, 'ld l, [hl]'),
+	0x6F : (0, 1, 'ld l, a'),
+	0x70 : (0, 2, 'ld [hl], b'),
+	0x71 : (0, 2, 'ld [hl], c'),
+	0x72 : (0, 2, 'ld [hl], d'),
+	0x73 : (0, 2, 'ld [hl], e'),
+	0x74 : (0, 2, 'ld [hl], h'),
+	0x75 : (0, 2, 'ld [hl], l'),
+	0x76 : (0, 1, 'halt'),
 	0x77 : (0, 2, 'ld [hl], a'),
 	0x78 : (0, 1, 'ld a, b'),
+	0x79 : (0, 1, 'ld a, c'),
+	0x7A : (0, 1, 'ld a, d'),
 	0x7B : (0, 1, 'ld a, e'),
 	0x7C : (0, 1, 'ld a, h'),
 	0x7D : (0, 1, 'ld a, l'),
+	0x7E : (0, 2, 'ld a, [hl]'),
+	0x7F : (0, 1, 'ld a, a'),
+	0x80 : (0, 1, 'add b'),
+	0x81 : (0, 1, 'add c'),
+	0x82 : (0, 1, 'add d'),
+	0x83 : (0, 1, 'add e'),
+	0x84 : (0, 1, 'add h'),
+	0x85 : (0, 1, 'add l'),
 	0x86 : (0, 2, 'add [hl]'),
+	0x87 : (0, 1, 'add a'),
+	0x88 : (0, 1, 'adc b'),
+	0x89 : (0, 1, 'adc c'),
+	0x8A : (0, 1, 'adc d'),
+	0x8B : (0, 1, 'adc e'),
+	0x8C : (0, 1, 'adc h'),
+	0x8D : (0, 1, 'adc l'),
+	0x8E : (0, 2, 'adc [hl]'),
+	0x8F : (0, 1, 'adc a'),
 	0x90 : (0, 1, 'sub b'),
-	0xC1 : (0, 3, 'pop bc'),
-	0xC5 : (0, 4, 'push bc'),
-	0xC9 : (0, 2, 'ret'),
-	0xCB : (1, 2, 'CB'),
-	0xCD : (2, 3, 'call ${val:0>4X}'),
+	0x91 : (0, 1, 'sub c'),
+	0x92 : (0, 1, 'sub d'),
+	0x93 : (0, 1, 'sub e'),
+	0x94 : (0, 1, 'sub h'),
+	0x95 : (0, 1, 'sub l'),
+	0x96 : (0, 2, 'sub [hl]'),
+	0x97 : (0, 1, 'sub a'),
+	0x98 : (0, 1, 'sbc b'),
+	0x99 : (0, 1, 'sbc c'),
+	0x9A : (0, 1, 'sbc d'),
+	0x9B : (0, 1, 'sbc e'),
+	0x9C : (0, 1, 'sbc h'),
+	0x9D : (0, 1, 'sbc l'),
+	0x9E : (0, 2, 'sbc [hl]'),
+	0x9F : (0, 1, 'sbc a'),
+	0xA0 : (0, 1, 'and b'),
+	0xA1 : (0, 1, 'and c'),
+	0xA2 : (0, 1, 'and d'),
+	0xA3 : (0, 1, 'and e'),
+	0xA4 : (0, 1, 'and h'),
+	0xA5 : (0, 1, 'and l'),
+	0xA6 : (0, 2, 'and [hl]'),
+	0xA7 : (0, 1, 'and a'),
+	0xA8 : (0, 1, 'xor b'),
+	0xA9 : (0, 1, 'xor c'),
+	0xAA : (0, 1, 'xor d'),
+	0xAB : (0, 1, 'xor e'),
+	0xAC : (0, 1, 'xor h'),
+	0xAD : (0, 1, 'xor l'),
+	0xAE : (0, 2, 'xor [hl]'),
 	0xAF : (0, 1, 'xor a'),
+	0xB0 : (0, 1, 'or b'),
+	0xB1 : (0, 1, 'or c'),
+	0xB2 : (0, 1, 'or d'),
+	0xB3 : (0, 1, 'or e'),
+	0xB4 : (0, 1, 'or h'),
+	0xB5 : (0, 1, 'or l'),
+	0xB6 : (0, 2, 'or [hl]'),
+	0xB7 : (0, 1, 'or a'),
+	0xB8 : (0, 1, 'cp b'),
+	0xB9 : (0, 1, 'cp c'),
+	0xBA : (0, 1, 'cp d'),
+	0xBB : (0, 1, 'cp e'),
+	0xBC : (0, 1, 'cp h'),
+	0xBD : (0, 1, 'cp l'),
 	0xBE : (0, 2, 'cp [hl]'),
+	0xBF : (0, 1, 'cp a'),
+	0xC0 : (0, 2, 'ret nz'),
+	0xC1 : (0, 3, 'pop bc'),
+	0xC2 : (2, 3, 'jp nz, ${val:0>4X}'),
+	0xC3 : (2, 4, 'jp ${val:0>4X}'),
+	0xC4 : (2, 3, 'call nz, ${val:0>4X}'),
+	0xC5 : (0, 4, 'push bc'),
+	0xC6 : (1, 2, 'add ${val:0>2X}'),
+	0xC7 : (0, 4, 'rst $00'),
+	0xC8 : (0, 2, 'ret z'),
+	0xC9 : (0, 2, 'ret'),
+	0xCA : (2, 3, 'jp z, ${val:0>4X}'),
+	0xCB : (1, 2, 'CB'),
+	0xCC : (2, 3, 'call z, ${val:0>4X}'),
+	0xCD : (2, 6, 'call ${val:0>4X}'),
+	0xCE : (1, 2, 'adc ${val:0>2X}'),
+	0xCF : (0, 4, 'rst $08'),
+	0xD0 : (0, 2, 'ret nc'),
+	0xD1 : (0, 3, 'pop de'),
+	0xD2 : (2, 3, 'jp nc, ${val:0>4X}'),
+	# 0xD3
+	0xD4 : (2, 3, 'call nc, ${val:0>4X}'),
+	0xD5 : (0, 4, 'push de'),
+	0xD6 : (1, 2, 'sub ${val:0>2X}'),
+	0xD7 : (0, 4, 'rst $10'),
+	0xD8 : (0, 2, 'ret c'),
+	0xD9 : (0, 4, 'reti'),
+	0xDA : (2, 3, 'jp c, ${val:0>4X}'),
+	# 0xDB
+	0xDC : (2, 3, 'call c, ${val:0>4X}'),
+	# 0xDD
+	0xDE : (1, 2, 'sbc ${val:0>2X}'),
+	0xDF : (0, 4, 'rst $18'),
 	0xE0 : (1, 3, 'ldh [$FF{val:0>2X}], a'),
-	0xF0 : (1, 3, 'ldh a, [$FF{val:0>2X}]'),
+	0xE1 : (0, 3, 'pop hl'),
 	0xE2 : (0, 2, 'ldh [c], a'),
+	# 0xE3
+	# 0xE4
+	0xE5 : (0, 4, 'push hl'),
+	0xE6 : (1, 2, 'and ${val:0>2X}'),
+	0xE7 : (0, 4, 'rst $20'),
+	0xE8 : (1, 4, 'add sp, ${val:0>2X}'),
+	0xE9 : (0, 1, 'jp [hl]'),
 	0xEA : (2, 4, 'ld [${val:0>4X}], a'),
+	# 0xEB
+	# 0xEC
+	# 0xED
+	0xEE : (1, 2, 'xor ${val:0>2X}'),
+	0xEF : (0, 4, 'rst $28'),
+	0xF0 : (1, 3, 'ldh a, [$FF{val:0>2X}]'),
+	0xF1 : (0, 3, 'pop af'),
+	0xF2 : (0, 2, 'ldh a, [c]'),
+	0xF3 : (0, 1, 'di'),
+	# 0xF4
+	0xF5 : (0, 4, 'push af'),
+	0xF6 : (1, 2, 'or ${val:0>2X}'),
+	0xF7 : (0, 4, 'rst $30'),
+	0xF8 : (1, 3, 'ld hl, sp+${val:0>2X}'),
+	0xF9 : (0, 2, 'ld sp, hl'),
+	0xFA : (2, 4, 'ld a, [${val:0>4X}]'),
+	0xFB : (0, 1, 'ei'),
+	# 0xFC
+	# 0xFD
 	0xFE : (1, 2, 'cp ${val:0>2X}'),
+	0xFF : (0, 4, 'rst $38'),
 }
 
 HEADER_LOGO = \
@@ -423,7 +629,7 @@ class WRAM:
 		elif inrng(adr, 0xFE00, 0xFFFF):
 			return None
 
-USE_BOOTROM = True
+USE_BOOTROM = False
 class CPU:
 	def __init__(self):
 		self.bus = None
@@ -545,6 +751,10 @@ class CPU:
 			pass
 		elif opcode == 0x01: # ld bc, arg
 			self.reg_bc = arg
+		elif opcode == 0x02: # ld [bc], a
+			self.bus.write_at(self.reg_bc, self.reg_a)
+		elif opcode == 0x03: # inc bc
+			self.reg_bc = (self.reg_bc + 1) % 0x10000
 		elif opcode == 0x04: # inc b
 			self.reg_b = (self.reg_b + 1) % 0x100
 			self.flg_z = self.reg_b == 0
@@ -557,6 +767,15 @@ class CPU:
 			self.flg_h = (self.reg_b & 0xF) == 0xF
 		elif opcode == 0x06: # ld b, arg
 			self.reg_b = arg
+		elif opcode == 0x07: # rlca
+			self.flg_c = bool(self.reg_a & 0x80)
+			self.reg_a = (self.reg_a << 1) & 0xFF
+			self.flg_n = False
+			self.flg_h = False
+			self.flg_z = self.reg_a == 0
+		elif opcode == 0x08: # ld [arg], sp
+			self.bus.write_at(arg, self.reg_sp & 0xFF)
+			self.bus.write_at(arg + 1, self.reg_sp >> 8)
 		elif opcode == 0x0C: # inc c
 			self.reg_c = (self.reg_c + 1) % 0x100
 			self.flg_z = self.reg_c == 0
@@ -634,6 +853,8 @@ class CPU:
 		elif opcode == 0x32: # ldd [hl], a
 			self.bus.write_at(self.reg_hl, self.reg_a)
 			self.reg_hl = (self.reg_hl - 1) % 0x10000
+		elif opcode == 0x36: # ld [hl], arg
+			self.bus.write_at(self.reg_hl, arg)
 		elif opcode == 0x3D: # dec a
 			self.reg_a = (self.reg_a - 1) % 0x100
 			self.flg_z = self.reg_a == 0
@@ -678,6 +899,8 @@ class CPU:
 			self.flg_c = self.reg_a < val
 		elif opcode == 0xC1: # pop bc
 			self.reg_bc = self.stack_pop()
+		elif opcode == 0xC3: # jp arg
+			self.reg_pc = arg
 		elif opcode == 0xC5: # push bc
 			self.stack_push(self.reg_bc)
 		elif opcode == 0xC9: # ret
@@ -702,6 +925,8 @@ class CPU:
 		elif opcode == 0xF0: # ldh a, [$FF00+arg]
 			adr = 0xFF00 + arg
 			self.reg_a = self.bus.read_at(adr)
+		elif opcode == 0xF3: # di
+			pass
 		elif opcode == 0xFE: # cp arg
 			self.flg_z = self.reg_a == arg
 			self.flg_n = True
